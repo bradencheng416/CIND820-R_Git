@@ -1,0 +1,4 @@
+git submodule deinit --all
+git pull
+rm -rf build
+rm -rf $RETDEC_INSTALL_DIR
