@@ -1,0 +1,110 @@
+---
+title: "Data_Exploration_and_Cleaning-Churn_Modelling"
+author: "Braden Cheng"
+date: "08/07/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Importing Dataset
+
+We will import the dataset "Churn_Modelling.csv" from Kaggle
+
+```{r churn_modelling}
+Churn_Modelling<-read.csv("Churn_Modelling.csv")
+churn<-Churn_Modelling
+```
+
+## Initial Exploration
+
+We perform initial exploratory steps on imported dataset.
+
+From this exploration, we are looking to determine: Number of attributes, Number of observations, Attribute types, If there are any blank/NA values, If there are duplicate observations, If the dataset is balanced
+
+```{r, echo=FALSE}
+str(churn)
+colSums(is.na(Churn_Modelling))
+which(duplicated(Churn_Modelling))
+sum(with(churn, Exited==1))
+sum(with(churn, Exited==0))
+```
+
+From the initial exploration, we find that the imported dataset has no blank/NA values, no duplicate observations, and a slight imbalance of roughly 1 churned customer for every 4 non-churned customers.
+
+Next we find the minimum, maximum, mean, and standard deviation values for the numeric attributes.
+
+```{r, echo=FALSE}
+description<-function(x) {
+  mind<-apply(x,2,min)
+  maxd<-apply(x,2,max)
+  meand<-apply(x,2,mean)
+  sdd<-apply(x,2,sd)
+  des<-list("min"=mind,"max"=maxd,"mean"=meand,"SD"=sdd)
+  return(des)
+}
+BC_MMMSD<-as.data.frame(description(churn[sapply(churn,is.numeric)]))
+BC_MMMSD
+```
+
+## Detecting Outliers
+
+In this step we aim to detect outliers using a boxplot.
+
+```{r, echo=FALSE}
+churn_num<-churn[sapply(churn,is.numeric)]
+outlier<-function(x) {
+  length(boxplot(x,plot=F)$out)
+}
+sapply(churn_num,outlier)
+```
+We are able to identify a number of outliers in four of the numeric attributes, including "Exited" from the imported dataset.
+
+## Removing Outliers
+
+In this step we will be removing the outliers identified in the previous step.
+
+We start by removing "Exited" from our dataset as this will be used as our Label Column later. From the new dataset, we identify the rows in which outliers are found.
+
+```{r, echo=TRUE}
+churn_num_subset<-subset(churn_num,select = -c(Exited))
+FindOutliers<-function(x) {
+  outliers<-boxplot(x,plot=F)$out
+  rows<-which(x %in% outliers)
+  rows
+}
+FoundOutliers<-sapply(churn_num_subset,FindOutliers)
+```
+
+After we identify the rows containing outliers, we delete the rows with outliers from the imported dataset.
+
+```{r, echo=TRUE}
+churn1<-churn[-c(FoundOutliers[[1]],FoundOutliers[[2]],FoundOutliers[[3]],FoundOutliers[[4]],FoundOutliers[[5]],FoundOutliers[[6]],FoundOutliers[[7]],FoundOutliers[[8]],FoundOutliers[[9]],FoundOutliers[[10]]),]
+```
+
+We then explore the new dataset we have created.
+
+```{r, echo=FALSE}
+str(churn1)
+colSums(is.na(churn1))
+which(duplicated(churn1))
+sum(with(churn1, Exited==1))
+sum(with(churn1, Exited==0))
+```
+
+From this exploration, we find that the new dataset has 9568 observations, no blank/NA values, no duplicate observations. We also find that the new dataset continues to show an imbalance of 1 to 4, churned customers to non-churned customers.
+
+## Produce Cleaned Dataset
+
+Now that outliers have been removed from the dataset, we continue to clean the dataset by removing "Surname" as this attribute will hold no value in the analysis we will be doing.
+
+```{r, echo=FALSE}
+churn2<-subset(churn1,select = -c(Surname))
+str(churn2)
+```
+
+## Summary
+
+Through exploration and cleaning, we have produced a cleaned dataset that consists of 13 attributes and 9568 observations. The cleaned dataset shows a consistent imbalance of churned compared to non-churned customers as the imported dataset.
